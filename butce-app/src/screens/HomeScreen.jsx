@@ -6,10 +6,11 @@ import TransactionForm from '../components/transaction/TransactionForm.jsx';
 import TransactionRow from '../components/transaction/TransactionRow.jsx';
 import CategoryDonut from '../components/transaction/CategoryDonut.jsx';
 import { addMonths, formatMonth, monthKey, today } from '../lib/date.js';
-import { fmtTRY } from '../lib/format.js';
+import { fmtTRY, fmtCompact } from '../lib/format.js';
+import { calculateTotalWealthTRY } from '../lib/balance.js';
 
 export default function HomeScreen({ data }) {
-  const { accounts, transactions, addTransaction, removeTransaction, settings } = data;
+  const { accounts, transactions, planned, addTransaction, removeTransaction, settings, fx } = data;
   const toast = useToast();
   const [cursor, setCursor] = useState(today().slice(0, 7) + '-01');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -61,6 +62,11 @@ export default function HomeScreen({ data }) {
   };
 
   const isCurrentMonth = curMonth === today().slice(0, 7);
+  const totalWealth = useMemo(
+    () => calculateTotalWealthTRY(accounts, transactions, planned, fx),
+    [accounts, transactions, planned, fx]
+  );
+  const hasMultiAccountsOrFx = accounts.length > 1 || accounts.some(a => a.currency !== 'TRY');
 
   return (
     <div>
@@ -86,6 +92,22 @@ export default function HomeScreen({ data }) {
       </div>
 
       <div className="screen" style={{ paddingTop: 0 }}>
+        {hasMultiAccountsOrFx && (
+          <div className="card card-tight" style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Toplam Servet</div>
+              <div className="numeric" style={{ fontSize: 18, fontWeight: 500 }}>{fmtTRY(totalWealth)}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {accounts.slice(0, 4).map(a => (
+                <span key={a.id} style={{
+                  width: 10, height: 10, borderRadius: 5, background: a.color, display: 'inline-block',
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {accounts.length > 1 && (
           <div className="hscroll" style={{ marginBottom: 16 }}>
             <button

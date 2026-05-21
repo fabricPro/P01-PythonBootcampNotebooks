@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Home, Wallet, Repeat, CreditCard, LineChart, Target } from 'lucide-react';
+import { Home, Wallet } from 'lucide-react';
 import { useAppData } from './store/useAppData.js';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
+import AccountsScreen from './screens/AccountsScreen.jsx';
 
 const TABS = [
   { id: 'home',     label: 'Ana',      icon: Home },
+  { id: 'accounts', label: 'Hesaplar', icon: Wallet },
 ];
 
 export default function App() {
@@ -29,6 +31,7 @@ export default function App() {
     <ToastProvider>
       <div className="app-shell">
         {tab === 'home' && <HomeScreen data={data} />}
+        {tab === 'accounts' && <AccountsScreen data={data} />}
 
         <nav className="tabbar">
           {TABS.map(t => {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Home, Wallet, Repeat, CreditCard, LineChart, Target } from 'lucide-react';
 import { useAppData } from './store/useAppData.js';
 import { ToastProvider } from './components/ui/Toast.jsx';
+import PWAUpdate from './components/ui/PWAUpdate.jsx';
 import HomeScreen from './screens/HomeScreen.jsx';
 import AccountsScreen from './screens/AccountsScreen.jsx';
 import RecurringScreen from './screens/RecurringScreen.jsx';
@@ -44,6 +45,8 @@ export default function App() {
         {tab === 'recurring' && <RecurringScreen data={data} />}
         {tab === 'budget' && <BudgetScreen data={data} />}
         {tab === 'forecast' && <ForecastScreen data={data} />}
+
+        <PWAUpdate />
 
         <nav className="tabbar">
           {TABS.map(t => {

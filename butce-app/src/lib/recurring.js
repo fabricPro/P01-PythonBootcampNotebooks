@@ -120,6 +120,8 @@ export async function materializeAll(rules, accounts, opts = {}) {
           amountTRY = conv.amount;
         }
         planned.push({
+          id: newId('pc'),
+          createdAt: Date.now(),
           accountId: account.id,
           name: rule.name,
           category: rule.category,

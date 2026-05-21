@@ -10,7 +10,7 @@ import { fmtTRY, fmtCompact } from '../lib/format.js';
 import { calculateTotalWealthTRY } from '../lib/balance.js';
 
 export default function HomeScreen({ data }) {
-  const { accounts, transactions, planned, addTransaction, removeTransaction, settings, fx } = data;
+  const { accounts, transactions, planned, recurring, updateRecurring, addTransaction, removeTransaction, settings, fx } = data;
   const toast = useToast();
   const [cursor, setCursor] = useState(today().slice(0, 7) + '-01');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -59,6 +59,15 @@ export default function HomeScreen({ data }) {
   const handleDelete = (id) => {
     removeTransaction(id);
     toast.show('Silindi');
+  };
+
+  const handleSkipRecurring = (tx) => {
+    const rule = recurring.find(r => r.id === tx.sourceId);
+    if (!rule) { removeTransaction(tx.id); return; }
+    const nextExceptions = [...(rule.exceptions || []), { date: tx.date, action: 'skip' }];
+    updateRecurring(rule.id, { exceptions: nextExceptions });
+    removeTransaction(tx.id);
+    toast.show('Bu ay atlandı');
   };
 
   const isCurrentMonth = curMonth === today().slice(0, 7);
@@ -195,6 +204,7 @@ export default function HomeScreen({ data }) {
                 tx={tx}
                 account={accounts.find(a => a.id === tx.accountId)}
                 onDelete={() => handleDelete(tx.id)}
+                onSkipRecurring={() => handleSkipRecurring(tx)}
               />
             ))}
           </div>

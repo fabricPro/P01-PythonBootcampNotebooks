@@ -4,6 +4,7 @@ import { KEYS, runMigrations } from '../data/migrations.js';
 import { newId } from '../lib/id.js';
 import { today } from '../lib/date.js';
 import { convertToTRY, getCurrentRates } from '../lib/fx.js';
+import { materializeAll } from '../lib/recurring.js';
 
 const DEFAULT_SETTINGS = {
   primaryCurrency: 'TRY',
@@ -53,16 +54,46 @@ export function useAppData() {
         await storage.set(KEYS.ACCOUNTS, acc);
       }
 
+      const initialTransactions = t?.value ?? [];
+      const initialPlanned = p?.value ?? [];
+      const initialRecurring = r?.value ?? [];
+
       setAccounts(acc);
-      setTransactions(t?.value ?? []);
-      setRecurring(r?.value ?? []);
-      setPlanned(p?.value ?? []);
+      setRecurring(initialRecurring);
       setGoals(g?.value ?? []);
       const setVal = s?.value ?? DEFAULT_SETTINGS;
       if (!setVal.defaultAccountId) setVal.defaultAccountId = acc[0]?.id;
       setSettings(setVal);
 
       getCurrentRates().then(rates => { if (!cancelled) setFx(rates); }).catch(() => {});
+
+      try {
+        const { transactions: newTx, planned: newPc, ruleUpdates } =
+          await materializeAll(initialRecurring, acc);
+
+        if (cancelled) return;
+
+        if (ruleUpdates.length > 0) {
+          const nextRules = initialRecurring.map(rule => {
+            const upd = ruleUpdates.find(u => u.id === rule.id);
+            return upd ? { ...rule, lastGeneratedDate: upd.lastGeneratedDate } : rule;
+          });
+          setRecurring(nextRules);
+          await storage.set(KEYS.RECURRING, nextRules);
+        }
+
+        const allTx = [...newTx, ...initialTransactions];
+        setTransactions(allTx);
+        if (newTx.length > 0) await storage.set(KEYS.TRANSACTIONS, allTx);
+
+        const allPc = [...initialPlanned, ...newPc];
+        setPlanned(allPc);
+        if (newPc.length > 0) await storage.set(KEYS.PLANNED, allPc);
+      } catch (e) {
+        console.error('Materialization failed', e);
+        setTransactions(initialTransactions);
+        setPlanned(initialPlanned);
+      }
 
       setReady(true);
     }
